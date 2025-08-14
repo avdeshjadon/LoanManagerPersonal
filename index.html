@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>💰 KP Khatoni | Loan Management</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="style.css" />
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+  </head>
+  <body>
+    <div id="auth-container" class="auth-container">
+      <div class="auth-card">
+        <div class="auth-header"><h2>Admin Login</h2></div>
+        <div class="auth-body">
+          <form id="login-form">
+            <div class="form-group">
+              <label for="login-email">Email</label>
+              <input
+                type="email"
+                id="login-email"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="login-password">Password</label>
+              <input
+                type="password"
+                id="login-password"
+                class="form-control"
+                required
+              />
+            </div>
+            <button
+              id="login-btn"
+              type="submit"
+              class="btn btn-primary btn-block"
+            >
+              <span class="loading-spinner hidden"></span><span>Login</span>
+            </button>
+            <p id="login-error" class="error-message"></p>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div id="admin-dashboard" class="admin-container hidden">
+      <div class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+          <h2><i class="fas fa-landmark"></i> <span>KP Khatoni</span></h2>
+        </div>
+        <div class="sidebar-menu">
+          <a href="#" class="menu-item active" data-section="dashboard"
+            ><i class="fas fa-home"></i><span>Dashboard</span></a
+          >
+          <a href="#" class="menu-item" data-section="active-accounts"
+            ><i class="fas fa-folder-open"></i><span>Active Accounts</span></a
+          >
+          <a href="#" class="menu-item" data-section="settled-accounts"
+            ><i class="fas fa-folder-closed"></i
+            ><span>Settled Accounts</span></a
+          >
+          <a href="#" class="menu-item" data-section="calculator"
+            ><i class="fas fa-calculator"></i><span>Calculator</span></a
+          >
+          <a href="#" class="menu-item" data-section="settings"
+            ><i class="fas fa-cog"></i><span>Settings</span></a
+          >
+        </div>
+      </div>
+      <div class="sidebar-overlay" id="sidebar-overlay"></div>
+      <div class="main-content">
+        <header class="header">
+          <button class="mobile-menu-btn" id="mobile-menu-btn">
+            <i class="fas fa-bars"></i>
+          </button>
+          <h1 id="section-title">Dashboard</h1>
+          <div class="user-profile">
+            <button
+              class="theme-toggle-btn"
+              id="theme-toggle-btn"
+              title="Toggle Theme"
+            >
+              <i class="fas fa-moon"></i>
+            </button>
+            <button class="logout-btn" id="logout-btn" title="Logout">
+              <i class="fas fa-sign-out-alt"></i>
+            </button>
+          </div>
+        </header>
+
+        <div id="dashboard-section" class="section-content is-active">
+          <div class="stats-container">
+            <div class="stat-card">
+              <div class="stat-title">Total Customers</div>
+              <div class="stat-value" id="total-customers">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Total Loans Given</div>
+              <div class="stat-value" id="total-loans">₹0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Net Balance Due</div>
+              <div class="stat-value" id="net-balance">₹0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Active Loans</div>
+              <div class="stat-value" id="active-loans">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-title">Net Profit</div>
+              <div class="stat-value" id="net-profit-dashboard">₹0</div>
+            </div>
+          </div>
+          <div class="form-card" style="margin-top: 2rem">
+            <div class="card-header">
+              <h2>Recent Active Customers</h2>
+              <button id="add-customer-btn" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Add Customer
+              </button>
+            </div>
+            <ul id="recent-customers-list" class="customer-list">
+              <li class="customer-item"><p>Loading...</p></li>
+            </ul>
+          </div>
+        </div>
+
+        <div id="active-accounts-section" class="section-content">
+          <div class="form-card">
+            <div class="card-header">
+              <h2>Active Accounts</h2>
+              <div
+                class="form-group"
+                style="margin-bottom: 0; min-width: 250px"
+              >
+                <input
+                  type="text"
+                  id="search-customers"
+                  class="form-control"
+                  placeholder="Search active customers..."
+                />
+              </div>
+            </div>
+            <ul id="customers-list" class="customer-list">
+              <li class="customer-item"><p>Loading...</p></li>
+            </ul>
+          </div>
+        </div>
+
+        <div id="settled-accounts-section" class="section-content">
+          <div class="form-card">
+            <div class="card-header"><h2>Settled Accounts</h2></div>
+            <ul id="settled-customers-list" class="customer-list">
+              <li class="customer-item"><p>Loading...</p></li>
+            </ul>
+          </div>
+        </div>
+
+        <div id="calculator-section" class="section-content">
+          <div class="form-card">
+            <h2>Standalone Interest Calculator</h2>
+            <form id="interest-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="calc-principal">Principal Amount</label>
+                  <input
+                    type="number"
+                    id="calc-principal"
+                    class="form-control"
+                    placeholder="principal amount"
+                    min="1"
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="calc-rate">Annual Interest Rate (%)</label>
+                  <input
+                    type="number"
+                    id="calc-rate"
+                    class="form-control"
+                    placeholder="Interest rate"
+                    min="0.01"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+              <div class="form-group">
+                <label>Duration</label>
+                <div class="form-row" style="margin-bottom: 0">
+                  <div class="form-group">
+                    <input
+                      type="number"
+                      id="calc-years"
+                      class="form-control"
+                      placeholder="Years"
+                      min="0"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <input
+                      type="number"
+                      id="calc-months"
+                      class="form-control"
+                      placeholder="Months"
+                      min="0"
+                    />
+                  </div>
+                  <div class="form-group">
+                    <input
+                      type="number"
+                      id="calc-days"
+                      class="form-control"
+                      placeholder="Days"
+                      min="0"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="reset" class="btn btn-outline">Clear</button>
+                <button type="submit" class="btn btn-primary">
+                  <span>Calculate Interest</span>
+                </button>
+              </div>
+            </form>
+            <div
+              id="calc-results"
+              class="hidden"
+              style="
+                margin-top: 2rem;
+                border-top: 1px dashed var(--border-color);
+                padding-top: 2rem;
+              "
+            >
+              <h3 style="margin-bottom: 1rem">Calculation Results</h3>
+              <div id="calc-result-display" class="details-grid"></div>
+            </div>
+          </div>
+        </div>
+
+        <div id="settings-section" class="section-content">
+          <div class="form-card">
+            <h2>Settings</h2>
+            <div
+              class="form-group"
+              style="
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+              "
+            >
+              <label style="margin-bottom: 0">Dark Mode</label>
+              <label class="switch"
+                ><input type="checkbox" id="dark-mode-toggle" /><span
+                  class="slider"
+                ></span
+              ></label>
+            </div>
+            <hr
+              style="
+                margin: 1.5rem 0;
+                border-color: var(--border-color);
+                border-style: dashed;
+              "
+            />
+            <div class="form-group">
+              <label>Data Export</label>
+              <button
+                id="download-data-btn"
+                class="btn btn-outline"
+                style="width: 100%"
+              >
+                <i class="fas fa-download"></i> Download All Data as JSON
+              </button>
+            </div>
+            <hr
+              style="
+                margin: 1.5rem 0;
+                border-color: var(--border-color);
+                border-style: dashed;
+              "
+            />
+            <form id="change-password-form">
+              <div class="form-group">
+                <label for="current-password">Current Password</label>
+                <input
+                  type="password"
+                  id="current-password"
+                  class="form-control"
+                  placeholder="Enter current password"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="new-password">New Password</label>
+                <input
+                  type="password"
+                  id="new-password"
+                  class="form-control"
+                  placeholder="Enter new password (min. 6 chars)"
+                  required
+                />
+              </div>
+              <div class="form-group">
+                <label for="confirm-password">Confirm New Password</label>
+                <input
+                  type="password"
+                  id="confirm-password"
+                  class="form-control"
+                  placeholder="Confirm new password"
+                  required
+                />
+              </div>
+              <div class="form-actions">
+                <button
+                  id="change-password-btn"
+                  type="submit"
+                  class="btn btn-primary"
+                >
+                  <span class="loading-spinner hidden"></span
+                  ><span>Change Password</span>
+                </button>
+              </div>
+            </form>
+            <hr
+              style="
+                margin: 1.5rem 0;
+                border-color: var(--border-color);
+                border-style: dashed;
+              "
+            />
+            <div class="form-actions">
+              <button id="logout-settings-btn" class="btn btn-danger">
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="customer-details-modal">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h3 class="modal-title" id="details-modal-title">Customer Details</h3>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div
+            id="edit-details-container"
+            class="form-actions no-pdf"
+            style="
+              margin-top: 0;
+              margin-bottom: 1.5rem;
+              justify-content: space-between;
+            "
+          >
+            <button class="btn btn-outline" id="edit-customer-btn">
+              <i class="fas fa-edit"></i> Edit Details
+            </button>
+            <button class="btn btn-success" id="whatsapp-btn">
+              <i class="fab fa-whatsapp"></i> Send on WhatsApp
+            </button>
+          </div>
+          <div id="ledger-pdf-content">
+            <div class="pdf-only hidden">
+              <div class="pdf-header">
+                <h2>Ledger Statement</h2>
+                <div class="pdf-meta">
+                  <p>
+                    <strong>Customer:</strong>
+                    <span id="pdf-customer-name"></span>
+                  </p>
+                  <p>
+                    <strong>Date:</strong>
+                    <span id="pdf-generation-date"></span>
+                  </p>
+                </div>
+              </div>
+            </div>
+            <div class="ledger-grid">
+              <div class="ledger-column" style="border-color: var(--error)">
+                <div class="ledger-column-header">
+                  <h4>Payments Given</h4>
+                </div>
+                <div id="lender-ledger-items"></div>
+                <div class="ledger-total" style="border-color: var(--error)">
+                  <span>Total Given</span><span id="lender-total">₹0.00</span>
+                </div>
+              </div>
+              <div class="ledger-column" style="border-color: var(--success)">
+                <div class="ledger-column-header">
+                  <h4>
+                    <i class="fas fa-arrow-down-to-bracket"></i> Payments
+                    Received
+                  </h4>
+                </div>
+                <div id="borrower-ledger-items"></div>
+                <div class="ledger-total" style="border-color: var(--success)">
+                  <span>Total Received</span
+                  ><span id="borrower-total">₹0.00</span>
+                </div>
+              </div>
+            </div>
+            <div class="net-balance">
+              <div id="active-account-summary">
+                <label>Final Net Amount Due</label>
+                <p id="net-balance-due">₹0.00</p>
+                <button id="settle-account-btn" class="btn btn-success no-pdf">
+                  <i class="fas fa-check-circle"></i> Settle This Account
+                </button>
+              </div>
+              <div id="settled-account-summary" class="hidden">
+                <h4>Settlement Summary</h4>
+                <div class="profit-details">
+                  <div class="profit-item">
+                    <span>Total Principal Given:</span
+                    ><span id="profit-total-given"></span>
+                  </div>
+                  <div class="profit-item">
+                    <span>Total Amount Received:</span
+                    ><span id="profit-total-received"></span>
+                  </div>
+                  <div class="profit-item total-profit">
+                    <span id="profit-loss-label">Net Profit:</span>
+                    <span id="profit-net"></span>
+                  </div>
+                </div>
+                <div id="payment-difference-summary" class="hidden no-pdf">
+                  <p>Settlement Shortfall</p>
+                  <span>User did not give this money:</span>
+                  <strong id="shortfall-amount"></strong>
+                </div>
+                <p id="ram-bharose-summary" class="hidden no-pdf"></p>
+                <button
+                  id="delete-account-btn"
+                  class="btn btn-danger no-pdf"
+                  style="width: 100%; margin-top: 1rem"
+                >
+                  <i class="fas fa-trash"></i> Delete This Record
+                </button>
+              </div>
+            </div>
+            <div class="pdf-only hidden">
+              <p class="pdf-footer">Generated by Kumar Pal Singh</p>
+            </div>
+          </div>
+          <div id="transaction-form-container" class="no-pdf">
+            <hr style="margin: 2rem 0 1.5rem 0" />
+            <h4 style="margin-bottom: 1rem">Record a Transaction</h4>
+            <form id="transaction-form">
+              <input type="hidden" id="transaction-customer-id" />
+              <div id="transaction-type-selector">
+                <label>Type:</label>
+                <label
+                  ><input
+                    type="radio"
+                    name="transaction-type"
+                    value="payment"
+                    checked
+                  />
+                  Payment Received</label
+                >
+                <label
+                  ><input type="radio" name="transaction-type" value="loan" />
+                  Payment Given</label
+                >
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="transaction-amount">Amount</label>
+                  <input
+                    type="number"
+                    id="transaction-amount"
+                    class="form-control"
+                    placeholder="Enter amount"
+                    required
+                  />
+                </div>
+                <div class="form-group">
+                  <label for="transaction-date">Date</label>
+                  <input
+                    type="date"
+                    id="transaction-date"
+                    class="form-control"
+                    required
+                  />
+                </div>
+              </div>
+              <div class="form-actions" style="grid-column: 1 / -1">
+                <button
+                  type="submit"
+                  id="submit-transaction-btn"
+                  class="btn btn-primary"
+                >
+                  <span class="loading-spinner hidden"></span
+                  ><span>Record Transaction</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="customer-form-modal">
+      <div class="modal-content" style="max-width: 500px">
+        <div class="modal-header">
+          <h3 class="modal-title" id="customer-form-modal-title">
+            Add Customer
+          </h3>
+          <button class="modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <form id="customer-form">
+            <input type="hidden" id="customer-id" />
+            <div class="form-group">
+              <label for="customer-name">Full Name</label>
+              <input
+                type="text"
+                id="customer-name"
+                class="form-control"
+                required
+              />
+            </div>
+            <div class="form-group">
+              <label for="customer-phone">Phone Number</label>
+              <input type="tel" id="customer-phone" class="form-control" />
+            </div>
+            <div class="form-group">
+              <label for="loan-amount">Initial Loan Amount (₹)</label>
+              <input
+                type="number"
+                id="loan-amount"
+                class="form-control"
+                required
+                min="0"
+              />
+            </div>
+            <div class="form-group">
+              <label for="interest-rate-modal">Annual Interest Rate (%)</label>
+              <input
+                type="number"
+                id="interest-rate-modal"
+                class="form-control"
+                required
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <div class="form-group">
+              <label for="loan-date">Loan Start Date</label>
+              <input type="date" id="loan-date" class="form-control" required />
+            </div>
+            <p id="customer-form-error" class="error-message"></p>
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-outline" data-close-modal>
+            Cancel
+          </button>
+          <button
+            type="submit"
+            class="btn btn-primary"
+            id="customer-modal-save"
+            form="customer-form"
+          >
+            <span class="loading-spinner hidden"></span
+            ><span>Save Customer</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal" id="confirmation-modal">
+      <div class="modal-content" style="max-width: 450px">
+        <div class="modal-header">
+          <h3 class="modal-title" id="confirmation-title">Are you sure?</h3>
+        </div>
+        <div class="modal-body">
+          <p id="confirmation-message">This action cannot be undone.</p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-outline" id="confirmation-cancel-btn">
+            Cancel
+          </button>
+          <button class="btn btn-danger" id="confirmation-confirm-btn">
+            Confirm
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="script.js"></script>
+  </body>
+</html>
