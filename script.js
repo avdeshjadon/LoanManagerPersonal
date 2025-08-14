@@ -1,3 +1,4 @@
+// Firebase configuration and initialization
 const firebaseConfig = {
   apiKey: "AIzaSyApRobyjr1U9chPvmXD_bG8WQRLneVDzFo",
   authDomain: "bahi-19838.firebaseapp.com",
@@ -11,10 +12,13 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 const storage = firebase.storage();
 
+// Main script execution
 document.addEventListener("DOMContentLoaded", () => {
+  // State variables
   let allCustomers = { active: [], settled: [] };
   let currentUser = null;
 
+  // DOM element references
   const authContainer = document.getElementById("auth-container");
   const adminDashboard = document.getElementById("admin-dashboard");
   const logoutBtns = [
@@ -34,6 +38,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const sidebarOverlay = document.getElementById("sidebar-overlay");
   const loginForm = document.getElementById("login-form");
 
+  // --- Helper Functions ---
   const showToast = (type, title, message) => {
     const toastContainer = document.getElementById("toast-container");
     const toast = document.createElement("div");
@@ -69,9 +74,8 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   const formatCurrency = (amount) =>
-    `₹${(amount || 0).toLocaleString("en-IN", {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2,
+    `₹${Math.round(amount || 0).toLocaleString("en-IN", {
+      maximumFractionDigits: 0,
     })}`;
 
   const formatPhoneNumberForWhatsApp = (phone) => {
@@ -82,6 +86,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   };
 
+  // --- Core Application Logic ---
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("login-email").value;
@@ -189,6 +194,9 @@ document.addEventListener("DOMContentLoaded", () => {
     sortedCustomers.forEach((customer) => {
       const li = document.createElement("li");
       li.className = "customer-item";
+      if (customer.isSimpleInterest) {
+        li.classList.add("is-monthly-payer");
+      }
       li.dataset.id = customer.id;
 
       let extraInfoHtml = "";
@@ -215,7 +223,7 @@ document.addEventListener("DOMContentLoaded", () => {
                               </div>
                               <div class="customer-actions">
                                 ${extraInfoHtml}
-                                <span style="font-weight: 500;">View Details <i class="fas fa-arrow-right"></i></span>
+                                <span class="view-details-prompt" style="font-weight: 500;">View Details <i class="fas fa-arrow-right"></i></span>
                               </div>`;
       listElement.appendChild(li);
     });
@@ -278,11 +286,12 @@ document.addEventListener("DOMContentLoaded", () => {
     return { years, months, days };
   };
 
-  const calculateAnnuallyCompoundedInterest = (
+  const calculateInterest = (
     principal,
     rate,
     startDateStr,
-    endDate
+    endDate,
+    isSimpleInterest = false
   ) => {
     if (!principal || !rate || !startDateStr)
       return {
@@ -293,13 +302,26 @@ document.addEventListener("DOMContentLoaded", () => {
       };
     const startDate = new Date(startDateStr);
     const { years, months, days } = calculateDuration(startDate, endDate);
+
+    if (isSimpleInterest) {
+      const totalDays = (endDate - startDate) / (1000 * 60 * 60 * 24);
+      const interest = principal * (rate / 100 / 365) * totalDays;
+      return {
+        principal,
+        interest,
+        total: principal + interest,
+        duration: { years, months, days },
+      };
+    }
+
     let amount = principal;
     for (let i = 0; i < years; i++) {
       amount += amount * (rate / 100);
     }
     const remainingDays = months * 30.417 + days;
-    const simpleInterest = amount * (rate / 100 / 365) * remainingDays;
-    amount += simpleInterest;
+    const simpleInterestOnCompoundedAmount =
+      amount * (rate / 100 / 365) * remainingDays;
+    amount += simpleInterestOnCompoundedAmount;
     return {
       principal,
       interest: amount - principal,
@@ -311,11 +333,20 @@ document.addEventListener("DOMContentLoaded", () => {
   const calculateLedgers = (customer) => {
     const endDate = new Date();
     const transactions = (customer.transactions || []).map((tx) => {
-      const calc = calculateAnnuallyCompoundedInterest(
+      if (tx.type === "payment" && customer.isSimpleInterest) {
+        return {
+          ...tx,
+          interest: 0,
+          total: tx.amount,
+          duration: { years: 0, months: 0, days: 0 },
+        };
+      }
+      const calc = calculateInterest(
         tx.amount,
-        customer.interestRate,
+        tx.rate || customer.interestRate,
         tx.date,
-        endDate
+        endDate,
+        customer.isSimpleInterest
       );
       return { ...tx, ...calc };
     });
@@ -371,28 +402,15 @@ document.addEventListener("DOMContentLoaded", () => {
     const activeLoansEl = document.getElementById("active-loans");
     const netProfitEl = document.getElementById("net-profit-dashboard");
 
-    totalLoansEl.textContent = formatCurrency(totalLoanGiven).replace(
-      ".00",
-      ""
-    );
+    totalLoansEl.textContent = formatCurrency(totalLoanGiven);
     netBalanceEl.textContent = formatCurrency(netBalance);
     activeLoansEl.textContent = allCustomers.active.length;
-    netProfitEl.textContent = formatCurrency(totalNetProfit).replace(".00", "");
+    netProfitEl.textContent = formatCurrency(totalNetProfit);
 
     adjustStatCardFontSize(totalLoansEl);
     adjustStatCardFontSize(netBalanceEl);
     adjustStatCardFontSize(netProfitEl);
   };
-
-  searchInput.addEventListener("input", () => {
-    const query = searchInput.value.toLowerCase();
-    const filtered = allCustomers.active.filter(
-      (c) =>
-        c.name.toLowerCase().includes(query) ||
-        (c.phone && c.phone.includes(query))
-    );
-    renderCustomerList(customersList, filtered);
-  });
 
   const detailsModal = document.getElementById("customer-details-modal");
   const showCustomerDetails = (customerId, isReadOnly = false) => {
@@ -405,6 +423,7 @@ document.addEventListener("DOMContentLoaded", () => {
       "details-modal-title"
     ).textContent = `Ledger for ${customer.name}`;
     document.getElementById("transaction-customer-id").value = customer.id;
+    document.getElementById("transaction-rate").value = customer.interestRate;
 
     const isSettled = customer.status === "settled";
     const canEdit = !isSettled && !isReadOnly;
@@ -412,15 +431,11 @@ document.addEventListener("DOMContentLoaded", () => {
     const editDetailsContainer = document.getElementById(
       "edit-details-container"
     );
-    const editCustomerBtn = document.getElementById("edit-customer-btn");
-    const whatsappBtn = document.getElementById("whatsapp-btn");
 
     if (isReadOnly || isSettled) {
       editDetailsContainer.style.display = "none";
     } else {
       editDetailsContainer.style.display = "flex";
-      editCustomerBtn.style.display = "inline-flex";
-      whatsappBtn.style.display = "inline-flex";
     }
 
     document.getElementById("transaction-form-container").style.display =
@@ -434,26 +449,41 @@ document.addEventListener("DOMContentLoaded", () => {
     const { loans, payments, lenderTotal, borrowerTotal, netBalanceDue } =
       calculateLedgers(customer);
 
+    const formatMonthlyRate = (tx) => {
+      const annualRate = tx.rate || customer.interestRate;
+      const monthlyRate = annualRate / 12;
+      const formattedRate = monthlyRate.toLocaleString("en-IN", {
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2,
+      });
+      return `${formattedRate}%`;
+    };
+
     const lenderLedgerItems = document.getElementById("lender-ledger-items");
     lenderLedgerItems.innerHTML = "";
     loans
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .forEach((tx) => {
         lenderLedgerItems.innerHTML += `<div class="ledger-item">
-                    <div class="tx-details"><span>Payment</span><span class="tx-date">${new Date(
-                      tx.date
-                    ).toLocaleDateString("en-IN")}</span></div>
-                    <div class="tx-amount-group"><span>${formatCurrency(
-                      tx.amount
-                    )}</span><small class="tx-interest success">+ ${formatCurrency(
-          tx.interest
-        )}</small></div>
-                    ${
-                      canEdit
-                        ? `<button class="delete-tx-btn" data-tx-id="${tx.id}" title="Delete Transaction"><i class="fas fa-times-circle"></i></button>`
-                        : ""
-                    }
-                </div>`;
+                <div class="tx-details">
+                  <div class="tx-description">Payment</div>
+                  <span class="tx-date">${new Date(tx.date).toLocaleDateString(
+                    "en-IN"
+                  )}</span>
+                </div>
+                <div class="tx-monthly-rate">${formatMonthlyRate(tx)}</div>
+                <div class="tx-amount-group">
+                  <div>${formatCurrency(tx.amount)}</div>
+                  <small class="tx-interest success">+ ${formatCurrency(
+                    tx.interest
+                  )}</small>
+                </div>
+                ${
+                  canEdit
+                    ? `<button class="delete-tx-btn" data-tx-id="${tx.id}" title="Delete Transaction"><i class="fas fa-times-circle"></i></button>`
+                    : ""
+                }
+              </div>`;
       });
 
     const borrowerLedgerItems = document.getElementById(
@@ -463,21 +493,31 @@ document.addEventListener("DOMContentLoaded", () => {
     payments
       .sort((a, b) => new Date(a.date) - new Date(b.date))
       .forEach((tx) => {
+        const interestDisplay =
+          customer.isSimpleInterest && tx.type === "payment"
+            ? '<div class="tx-interest"></div>'
+            : `<small class="tx-interest success">+ ${formatCurrency(
+                tx.interest
+              )}</small>`;
+
         borrowerLedgerItems.innerHTML += `<div class="ledger-item">
-                    <div class="tx-details"><span>Payment</span><span class="tx-date">${new Date(
-                      tx.date
-                    ).toLocaleDateString("en-IN")}</span></div>
-                    <div class="tx-amount-group"><span>${formatCurrency(
-                      tx.amount
-                    )}</span><small class="tx-interest success">+ ${formatCurrency(
-          tx.interest
-        )}</small></div>
-                    ${
-                      canEdit
-                        ? `<button class="delete-tx-btn" data-tx-id="${tx.id}" title="Delete Transaction"><i class="fas fa-times-circle"></i></button>`
-                        : ""
-                    }
-                </div>`;
+                <div class="tx-details">
+                  <div class="tx-description">Payment</div>
+                  <span class="tx-date">${new Date(tx.date).toLocaleDateString(
+                    "en-IN"
+                  )}</span>
+                </div>
+                 <div class="tx-monthly-rate">${formatMonthlyRate(tx)}</div>
+                <div class="tx-amount-group">
+                  <div>${formatCurrency(tx.amount)}</div>
+                  ${interestDisplay}
+                </div>
+                ${
+                  canEdit
+                    ? `<button class="delete-tx-btn" data-tx-id="${tx.id}" title="Delete Transaction"><i class="fas fa-times-circle"></i></button>`
+                    : ""
+                }
+              </div>`;
       });
 
     document.getElementById("lender-total").textContent =
@@ -559,6 +599,7 @@ document.addEventListener("DOMContentLoaded", () => {
     document.getElementById("customer-id").value = "";
     document.getElementById("customer-form-modal-title").textContent =
       "Add New Customer";
+    document.getElementById("is-simple-interest").checked = false;
     document.getElementById("loan-date").value = new Date()
       .toISOString()
       .split("T")[0];
@@ -580,6 +621,8 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("loan-amount").value = firstLoan?.amount || 0;
       document.getElementById("interest-rate-modal").value =
         customer.interestRate;
+      document.getElementById("is-simple-interest").checked =
+        customer.isSimpleInterest || false;
       document.getElementById("loan-date").value = firstLoan?.date || "";
       document.getElementById("customer-form-modal-title").textContent =
         "Edit Customer Details";
@@ -609,12 +652,16 @@ document.addEventListener("DOMContentLoaded", () => {
         customerData.phone = document.getElementById("customer-phone").value;
         customerData.interestRate =
           parseFloat(document.getElementById("interest-rate-modal").value) || 0;
+        customerData.isSimpleInterest =
+          document.getElementById("is-simple-interest").checked;
 
         if (firstLoanIndex !== -1) {
           customerData.transactions[firstLoanIndex].amount =
             parseFloat(document.getElementById("loan-amount").value) || 0;
           customerData.transactions[firstLoanIndex].date =
             document.getElementById("loan-date").value;
+          customerData.transactions[firstLoanIndex].rate =
+            customerData.interestRate;
         }
 
         await customerRef.update(customerData);
@@ -626,6 +673,8 @@ document.addEventListener("DOMContentLoaded", () => {
           interestRate:
             parseFloat(document.getElementById("interest-rate-modal").value) ||
             0,
+          isSimpleInterest:
+            document.getElementById("is-simple-interest").checked,
           transactions: [
             {
               amount:
@@ -633,6 +682,10 @@ document.addEventListener("DOMContentLoaded", () => {
               date: document.getElementById("loan-date").value,
               type: "loan",
               id: Date.now(),
+              rate:
+                parseFloat(
+                  document.getElementById("interest-rate-modal").value
+                ) || 0,
             },
           ],
           owner: currentUser.uid,
@@ -682,9 +735,9 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   detailsModal.addEventListener("click", (e) => {
-    const button = e.target.closest(".delete-tx-btn");
-    if (button) {
-      const txId = parseInt(button.dataset.txId);
+    const deleteBtn = e.target.closest(".delete-tx-btn");
+    if (deleteBtn) {
+      const txId = parseInt(deleteBtn.dataset.txId);
       const customerId = document.getElementById(
         "transaction-customer-id"
       ).value;
@@ -745,16 +798,11 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      toggleButtonLoading(whatsappBtn, true, "Preparing...");
+      toggleButtonLoading(whatsappBtn, true, "Preparing PDF...");
 
-      const elementToPrint = document.getElementById("ledger-pdf-content");
-      document.getElementById("pdf-customer-name").textContent = customer.name;
-      document.getElementById(
-        "pdf-generation-date"
-      ).textContent = `As of: ${new Date().toLocaleDateString("en-IN")}`;
+      populatePdfTemplate(customer);
 
-      elementToPrint.classList.add("render-for-pdf");
-
+      const elementToPrint = document.getElementById("invoice");
       const dateStr = new Date()
         .toLocaleDateString("en-IN", {
           day: "2-digit",
@@ -763,11 +811,16 @@ document.addEventListener("DOMContentLoaded", () => {
         })
         .replace(/\//g, "-");
       const options = {
-        margin: 0.5,
+        margin: 0,
         filename: `${customer.name}_${dateStr}.pdf`,
-        image: { type: "jpeg", quality: 0.98 },
-        html2canvas: { scale: 2, useCORS: true },
-        jsPDF: { unit: "in", format: "a4", orientation: "portrait" },
+        image: { type: "jpeg", quality: 1.0 },
+        html2canvas: {
+          scale: 2,
+          dpi: 300,
+          useCORS: true,
+          letterRendering: true,
+        },
+        jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
       };
 
       html2pdf()
@@ -775,8 +828,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .set(options)
         .save()
         .then(() => {
-          elementToPrint.classList.remove("render-for-pdf");
-          toggleButtonLoading(whatsappBtn, false);
+          toggleButtonLoading(whatsappBtn, false, "Send on WhatsApp");
           showToast(
             "success",
             "PDF Downloading",
@@ -791,11 +843,155 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch((err) => {
           showToast("error", "PDF Error", "Could not generate the PDF file.");
           console.error(err);
-          elementToPrint.classList.remove("render-for-pdf");
-          toggleButtonLoading(whatsappBtn, false);
+          toggleButtonLoading(whatsappBtn, false, "Send on WhatsApp");
         });
     }
   });
+
+  const populatePdfTemplate = (customer) => {
+    const { loans, payments, lenderTotal, borrowerTotal, netBalanceDue } =
+      calculateLedgers(customer);
+
+    document.getElementById("pdf-tpl-customer-name").textContent =
+      customer.name;
+    document.getElementById("pdf-tpl-generation-date").textContent =
+      new Date().toLocaleDateString("en-IN");
+
+    const now = new Date();
+    const timestamp = `Generated: ${now.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })} at ${now.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })}`;
+    document.getElementById("pdf-tpl-timestamp").textContent = timestamp;
+
+    const formatMonthlyRate = (tx) => {
+      const annualRate = tx.rate || customer.interestRate;
+      const monthlyRate = annualRate / 12;
+      return (
+        monthlyRate.toLocaleString("en-IN", {
+          minimumFractionDigits: 0,
+          maximumFractionDigits: 2,
+        }) + "%"
+      );
+    };
+
+    const lenderTbody = document.querySelector("#pdf-tpl-lender-table tbody");
+    lenderTbody.innerHTML = "";
+    loans
+      .sort((a, b) => new Date(a.date) - new Date(b.date))
+      .forEach((tx) => {
+        const row = `
+            <tr>
+                <td>${new Date(tx.date).toLocaleDateString("en-IN")}</td>
+                <td>Payment Given</td>
+                <td>${formatMonthlyRate(tx)}</td>
+                <td class="text-right">${formatCurrency(tx.amount)}</td>
+                <td class="text-right">${formatCurrency(tx.interest)}</td>
+                <td class="text-right">${formatCurrency(tx.total)}</td>
+            </tr>
+        `;
+        lenderTbody.innerHTML += row;
+      });
+
+    const borrowerTable = document.getElementById("pdf-tpl-borrower-table");
+    const noBorrowerPaymentsMsg = document.getElementById(
+      "pdf-no-borrower-payments"
+    );
+
+    if (payments.length === 0) {
+      // No payments exist, so hide the table and show the "N/A" message
+      borrowerTable.classList.add("hidden");
+      noBorrowerPaymentsMsg.classList.remove("hidden");
+    } else {
+      // Payments exist, so show the table and populate it
+      borrowerTable.classList.remove("hidden");
+      noBorrowerPaymentsMsg.classList.add("hidden");
+
+      const borrowerTbody = borrowerTable.querySelector("tbody");
+      borrowerTbody.innerHTML = "";
+      payments
+        .sort((a, b) => new Date(a.date) - new Date(b.date))
+        .forEach((tx) => {
+          const interestDisplay =
+            customer.isSimpleInterest && tx.type === "payment"
+              ? formatCurrency(0)
+              : formatCurrency(tx.interest);
+          const row = `
+              <tr>
+                  <td>${new Date(tx.date).toLocaleDateString("en-IN")}</td>
+                  <td>Payment Received</td>
+                  <td>${formatMonthlyRate(tx)}</td>
+                  <td class="text-right">${formatCurrency(tx.amount)}</td>
+                  <td class="text-right">${interestDisplay}</td>
+                  <td class="text-right">${formatCurrency(tx.total)}</td>
+              </tr>
+          `;
+          borrowerTbody.innerHTML += row;
+        });
+    }
+
+    const summaryContainer = document.getElementById("pdf-tpl-summary");
+    const stamp = document.getElementById("pdf-tpl-stamp");
+    stamp.className = "stamp-image hidden";
+
+    if (customer.status === "settled") {
+      const totalGiven = (customer.transactions || [])
+        .filter((t) => t.type === "loan")
+        .reduce((sum, t) => sum + t.amount, 0);
+      const totalReceived = (customer.transactions || [])
+        .filter((t) => t.type === "payment")
+        .reduce((sum, t) => sum + t.amount, 0);
+      const netProfit = totalReceived - totalGiven;
+      const profitLossLabel = netProfit >= 0 ? "Net Profit" : "Net Loss";
+
+      summaryContainer.innerHTML = `
+            <table>
+                <tr>
+                    <td class="summary-label">Total Amount Given:</td>
+                    <td class="text-right">${formatCurrency(totalGiven)}</td>
+                </tr>
+                <tr>
+                    <td class="summary-label">Total Amount Received:</td>
+                    <td class="text-right">${formatCurrency(totalReceived)}</td>
+                </tr>
+                <tr class="summary-total">
+                    <td class="summary-label">${profitLossLabel}:</td>
+                    <td class="text-right">${formatCurrency(netProfit)}</td>
+                </tr>
+            </table>
+        `;
+      stamp.textContent = "SETTLED";
+      stamp.classList.remove("hidden", "stamp-paid");
+      stamp.classList.add("stamp-settled");
+    } else {
+      summaryContainer.innerHTML = `
+            <table>
+                <tr>
+                    <td class="summary-label">Total Given (with Interest):</td>
+                    <td class="text-right">${formatCurrency(lenderTotal)}</td>
+                </tr>
+                <tr>
+                    <td class="summary-label">Total Received (with Interest):</td>
+                    <td class="text-right">${formatCurrency(borrowerTotal)}</td>
+                </tr>
+                <tr class="summary-total">
+                    <td class="summary-label">Final Net Amount Due:</td>
+                    <td class="text-right">${formatCurrency(netBalanceDue)}</td>
+                </tr>
+            </table>
+        `;
+      if (netBalanceDue <= 0) {
+        stamp.textContent = "PAID";
+        stamp.classList.remove("hidden", "stamp-settled");
+        stamp.classList.add("stamp-paid");
+      }
+    }
+  };
 
   document
     .getElementById("transaction-form")
@@ -808,15 +1004,18 @@ document.addEventListener("DOMContentLoaded", () => {
         document.getElementById("transaction-amount").value
       );
       const date = document.getElementById("transaction-date").value;
+      const rate = parseFloat(
+        document.getElementById("transaction-rate").value
+      );
       const type = document.querySelector(
         'input[name="transaction-type"]:checked'
       ).value;
 
-      if (isNaN(amount) || amount <= 0 || !date) {
+      if (isNaN(amount) || amount <= 0 || !date || isNaN(rate)) {
         showToast(
           "error",
           "Invalid Input",
-          "Please enter a valid amount and date."
+          "Please enter a valid amount, date, and interest rate."
         );
         return;
       }
@@ -824,7 +1023,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const btn = document.getElementById("submit-transaction-btn");
       toggleButtonLoading(btn, true, "Saving...");
 
-      const newTransaction = { amount, date, type, id: Date.now() };
+      const newTransaction = {
+        amount,
+        date,
+        type,
+        rate,
+        id: Date.now(),
+      };
 
       try {
         await db
@@ -836,7 +1041,15 @@ document.addEventListener("DOMContentLoaded", () => {
           });
         await loadData();
         showCustomerDetails(customerId);
-        e.target.reset();
+        document.getElementById("transaction-form").reset();
+        document.getElementById("tx-type-payment").checked = true;
+
+        const customer = allCustomers.active.find((c) => c.id === customerId);
+        if (customer) {
+          document.getElementById("transaction-rate").value =
+            customer.interestRate;
+        }
+
         showToast(
           "success",
           "Transaction Recorded",
@@ -945,8 +1158,13 @@ document.addEventListener("DOMContentLoaded", () => {
     endDate.setMonth(endDate.getMonth() + m);
     endDate.setDate(endDate.getDate() + d);
 
-    const { principal, interest, total, duration } =
-      calculateAnnuallyCompoundedInterest(p, r, startDate, endDate);
+    const { principal, interest, total, duration } = calculateInterest(
+      p,
+      r,
+      startDate,
+      endDate,
+      false
+    );
     document.getElementById(
       "calc-result-display"
     ).innerHTML = `<div class="detail-item"><label>Principal</label><p>${formatCurrency(
@@ -1020,7 +1238,9 @@ document.addEventListener("DOMContentLoaded", () => {
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `kp_bahi_export_${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `kumar_pal_singh_export_${new Date()
+      .toISOString()
+      .slice(0, 10)}.json`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);

@@ -15,6 +15,13 @@
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --box-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
+
+  /* FIXED: Replaced color-mix with rgba variables */
+  --primary-t-10: rgba(74, 85, 162, 0.1);
+  --primary-t-08: rgba(74, 85, 162, 0.08);
+  --success-t-15: rgba(56, 161, 105, 0.15);
+  --error-t-10: rgba(229, 62, 62, 0.1);
+  --monthly-payer-bg: var(--success-t-15);
 }
 html[data-theme="dark"] {
   --primary: #90cdf4;
@@ -25,6 +32,13 @@ html[data-theme="dark"] {
   --bg-main: #1a202c;
   --bg-card: #2d3748;
   --border-color: #4a5568;
+
+  /* FIXED: Replaced color-mix with rgba variables for dark mode */
+  --primary-t-10: rgba(144, 205, 244, 0.1);
+  --primary-t-08: rgba(144, 205, 244, 0.08);
+  --success-t-20: rgba(56, 161, 105, 0.2);
+  --error-t-10: rgba(229, 62, 62, 0.1);
+  --monthly-payer-bg: var(--success-t-20);
 }
 * {
   margin: 0;
@@ -92,8 +106,7 @@ body {
 .form-control:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px
-    color-mix(in srgb, var(--primary) 20%, transparent);
+  box-shadow: 0 0 0 3px var(--primary-t-20);
   background-color: var(--bg-card);
 }
 .btn {
@@ -107,8 +120,7 @@ body {
   font-weight: 600;
   cursor: pointer;
   transition: background-color 0.2s ease-out, transform 0.2s ease-out,
-    box-shadow 0.2s ease-out, color 0.2s ease-out,
-    border-color 0.2s ease-out;
+    box-shadow 0.2s ease-out, color 0.2s ease-out, border-color 0.2s ease-out;
   text-decoration: none;
 }
 .btn i {
@@ -227,7 +239,7 @@ body {
 .menu-item:hover,
 .menu-item.active {
   color: var(--primary);
-  background: color-mix(in srgb, var(--primary) 8%, transparent);
+  background: var(--primary-t-08); /* FIXED */
 }
 .menu-item.active {
   font-weight: 600;
@@ -291,11 +303,11 @@ body {
 .theme-toggle-btn:hover,
 .logout-btn:hover {
   color: var(--primary);
-  background-color: color-mix(in srgb, var(--primary) 10%, transparent);
+  background-color: var(--primary-t-10); /* FIXED */
 }
 .logout-btn:hover {
   color: var(--error);
-  background-color: color-mix(in srgb, var(--error) 10%, transparent);
+  background-color: var(--error-t-10); /* FIXED */
 }
 .stats-container {
   display: grid;
@@ -337,7 +349,6 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1.5rem;
-  margin-bottom: 1.5rem;
 }
 .form-actions {
   display: flex;
@@ -505,16 +516,24 @@ body {
   background-color: var(--bg-main);
   padding: 1rem 1.25rem;
   border: 1px solid var(--border-color);
+  border-left: 4px solid transparent;
   border-radius: var(--border-radius);
   margin-bottom: 0.75rem;
   transition: transform 0.2s ease-out, box-shadow 0.2s ease-out,
-    border-color 0.2s ease-out;
+    border-color 0.2s ease-out, background-color 0.2s ease-out;
   cursor: pointer;
+}
+.customer-item.is-monthly-payer {
+  background-color: var(--monthly-payer-bg);
+  border-left: 4px solid var(--success);
 }
 .customer-item:hover {
   transform: translateY(-3px);
   box-shadow: var(--box-shadow);
   border-color: var(--primary);
+}
+.customer-item.is-monthly-payer:hover {
+  border-left-color: var(--primary);
 }
 .customer-info {
   flex: 1;
@@ -535,6 +554,7 @@ body {
   gap: 1rem;
   align-items: center;
   flex-shrink: 0;
+  flex-wrap: wrap;
 }
 .list-profit-display,
 .list-interest-display {
@@ -597,9 +617,10 @@ body {
   margin: 0;
 }
 .ledger-item {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr auto;
+  gap: 0.75rem;
   align-items: center;
-  gap: 8px;
   margin-bottom: 1rem;
 }
 .ledger-item .tx-details {
@@ -607,6 +628,19 @@ body {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
+}
+.tx-description {
+  font-weight: 500;
+}
+.tx-monthly-rate {
+  font-size: 0.85em;
+  font-weight: 500;
+  color: var(--text-gray);
+  background-color: var(--bg-main);
+  padding: 2px 8px;
+  border-radius: 6px;
+  white-space: nowrap;
+  text-align: center;
 }
 .ledger-item .tx-details .tx-date {
   font-size: 0.8rem;
@@ -620,6 +654,7 @@ body {
   display: block;
   font-size: 0.8em;
   font-weight: 500;
+  min-height: 1.2em; /* Ensures alignment even if empty */
 }
 .tx-interest.success {
   color: var(--success);
@@ -681,7 +716,7 @@ body {
   padding: 1rem;
   border: 1px solid var(--error);
   border-radius: var(--border-radius);
-  background-color: color-mix(in srgb, var(--error) 10%, transparent);
+  background-color: var(--error-t-10); /* FIXED */
   text-align: center;
 }
 #payment-difference-summary p {
@@ -707,58 +742,6 @@ body {
 #ram-bharose-summary strong {
   color: var(--warning);
   font-weight: 600;
-}
-.pdf-only {
-  text-align: center;
-  margin-bottom: 2rem;
-  border-bottom: 2px solid #e2e8f0;
-  padding-bottom: 1.5rem;
-}
-.pdf-only h2 {
-  font-size: 1.5rem;
-  margin-bottom: 0.5rem;
-  color: #4a55a2;
-}
-.pdf-only .pdf-meta {
-  display: flex;
-  justify-content: space-around;
-  font-size: 0.9rem;
-  color: #718096;
-}
-.pdf-footer {
-  font-size: 0.8rem;
-  color: #a0aec0;
-  text-align: center;
-  margin-top: 2rem;
-  padding-top: 1rem;
-  border-top: 1px solid #e2e8f0;
-}
-#ledger-pdf-content.render-for-pdf {
-  background: #ffffff !important;
-  color: #000000 !important;
-  padding: 20px;
-}
-#ledger-pdf-content.render-for-pdf * {
-  color: #000000 !important;
-}
-#ledger-pdf-content.render-for-pdf .ledger-column,
-#ledger-pdf-content.render-for-pdf .net-balance {
-  border-color: #cccccc !important;
-  box-shadow: none !important;
-  background-color: #f9f9f9 !important;
-}
-#ledger-pdf-content.render-for-pdf .tx-interest.success {
-  color: #38a169 !important;
-}
-#ledger-pdf-content.render-for-pdf
-  .total-profit
-  span:last-child[style*="color: var(--error)"] {
-  color: var(--error) !important;
-}
-#ledger-pdf-content.render-for-pdf
-  .total-profit
-  span:last-child[style*="color: var(--success)"] {
-  color: var(--success) !important;
 }
 .switch {
   position: relative;
@@ -827,12 +810,46 @@ input:checked + .slider:before {
   font-weight: 600;
   margin: 0;
 }
-#transaction-type-selector {
+.transaction-type-toggle {
   display: flex;
-  gap: 1rem;
-  margin-bottom: 1rem;
-  align-items: center;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius);
+  overflow: hidden;
 }
+.transaction-type-toggle input[type="radio"] {
+  display: none;
+}
+.transaction-type-toggle .tx-type-btn {
+  flex: 1;
+  text-align: center;
+  padding: 0.75rem;
+  cursor: pointer;
+  background-color: var(--bg-main);
+  color: var(--text-gray);
+  transition: all 0.2s ease-in-out;
+  font-weight: 600;
+  margin-bottom: 0;
+}
+.transaction-type-toggle .tx-type-btn i {
+  margin-right: 0.5rem;
+}
+.transaction-type-toggle .tx-type-btn:not(:last-child) {
+  border-right: 1px solid var(--border-color);
+}
+.transaction-type-toggle input[type="radio"]:checked + .tx-type-btn.tx-payment {
+  background-color: var(--success);
+  color: white;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+.transaction-type-toggle input[type="radio"]:checked + .tx-type-btn.tx-loan {
+  background-color: var(--error);
+  color: white;
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+#transaction-form .form-row {
+  margin-bottom: 0;
+}
+
 @media (max-width: 992px) {
   .sidebar {
     transform: translateX(-100%);
@@ -852,6 +869,35 @@ input:checked + .slider:before {
     grid-template-columns: 1fr;
     gap: 1.5rem;
   }
+  .ledger-item {
+    grid-template-columns: 1fr auto;
+    align-items: start;
+  }
+  .ledger-item .tx-details {
+    grid-column: 1;
+    grid-row: 1;
+  }
+  .ledger-item .tx-amount-group {
+    grid-column: 1;
+    grid-row: 2;
+    text-align: left;
+    margin-left: 0;
+  }
+  .ledger-item .delete-tx-btn {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    align-self: center;
+  }
+  .ledger-item .tx-monthly-rate {
+    grid-column: 2;
+    grid-row: 1;
+    justify-self: end;
+    align-self: start;
+  }
+  .tx-interest {
+    display: inline;
+    margin-left: 0.5rem;
+  }
 }
 @media (max-width: 600px) {
   .main-content {
@@ -862,6 +908,13 @@ input:checked + .slider:before {
   }
   .form-card {
     padding: 1.5rem;
+  }
+  #edit-details-container {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+  #edit-details-container .btn {
+    width: 100%;
   }
   .modal-body,
   .modal-header,
@@ -895,6 +948,12 @@ input:checked + .slider:before {
   .toast {
     min-width: 0;
   }
+  .customer-item .view-details-prompt {
+    display: none;
+  }
+  #transaction-form .form-row {
+    grid-template-columns: 1fr;
+  }
 }
 @keyframes spin {
   to {
@@ -910,4 +969,206 @@ input:checked + .slider:before {
     transform: translateX(0);
     opacity: 1;
   }
+}
+
+/* === PDF INVOICE STYLES (FINAL & STYLISH) === */
+#invoice {
+  width: 210mm;
+  padding: 20mm;
+  box-sizing: border-box;
+  color: #34495e;
+  font-size: 10pt;
+  font-family: "Inter", sans-serif;
+  background-color: #fff;
+  position: relative;
+  overflow: hidden;
+}
+#invoice::before {
+  content: "Kumar pal singh";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) rotate(-45deg);
+  font-size: 90pt;
+  font-weight: 700;
+  color: rgba(74, 85, 162, 0.05);
+  z-index: 1;
+  pointer-events: none;
+  width: 200%;
+  text-align: center;
+}
+.invoice-header,
+.invoice-body,
+.invoice-summary,
+.invoice-footer {
+  position: relative;
+  z-index: 2;
+}
+.invoice-header {
+  display: flex;
+  justify-content: space-between;
+  border-bottom: 3px solid var(--primary);
+  padding-bottom: 15px;
+  margin-bottom: 30px;
+}
+.header-left .company-name {
+  font-size: 24pt;
+  font-weight: 700;
+  color: var(--primary);
+  margin: 0;
+}
+.header-left .company-address {
+  margin-top: 5px;
+  color: #555;
+  line-height: 1.5;
+}
+.header-right {
+  text-align: right;
+}
+.header-right h2 {
+  font-size: 16pt;
+  margin: 0;
+  color: #333;
+  font-weight: 600;
+}
+.header-right p {
+  margin-top: 5px;
+  font-size: 10pt;
+}
+.invoice-body {
+  margin-bottom: 30px;
+}
+.ledger-table-container {
+  margin-bottom: 30px;
+}
+.ledger-table-container h3 {
+  font-size: 13pt;
+  font-weight: 600;
+  padding-bottom: 8px;
+  margin-bottom: 15px;
+  border-bottom: 1px solid #e0e0e0;
+  color: #333;
+}
+.ledger-table-container table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.ledger-table-container th,
+.ledger-table-container td {
+  padding: 12px 10px;
+  border: none;
+  border-bottom: 1px solid #e9ecef;
+}
+.ledger-table-container thead tr {
+  background-color: var(--primary-t-10);
+}
+.ledger-table-container th {
+  font-weight: 600;
+  font-size: 9.5pt;
+  color: var(--primary);
+}
+.ledger-table-container tbody tr:nth-child(even) {
+  background-color: #fcfcff;
+}
+.text-right {
+  text-align: right;
+}
+.invoice-summary {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 40px;
+}
+.invoice-summary table {
+  width: 50%;
+  border-collapse: collapse;
+}
+.invoice-summary td {
+  padding: 10px;
+  border: none;
+}
+.invoice-summary .summary-label {
+  font-weight: 500;
+  color: #fff;
+}
+.invoice-summary .summary-total {
+  border-top: 2px solid var(--primary);
+  border-bottom: 2px solid var(--primary);
+  font-size: 13pt;
+  font-weight: 700;
+  background-color: var(--primary);
+  color: #fff;
+}
+.invoice-summary .summary-total td {
+  padding: 12px;
+}
+.invoice-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  padding-top: 20px;
+  border-top: 1px solid #ccc;
+  margin-top: 40px;
+}
+.notes {
+  font-size: 9pt;
+  color: #777;
+}
+.notes .timestamp-note {
+  font-size: 8pt;
+  color: #888;
+  margin-top: 10px;
+}
+.stamp-area {
+  text-align: center;
+  position: relative;
+}
+.signature {
+  padding-top: 5px;
+}
+.signature-image {
+  width: 160px;
+  height: 55px;
+  margin: 0 auto -5px auto;
+}
+.signature-image svg {
+  width: 100%;
+  height: 100%;
+  stroke: #2c3e50;
+}
+.signature-title {
+  font-size: 9pt;
+  color: #333;
+  border-top: 1px solid #333;
+  padding: 5px 15px 0 15px;
+  display: inline-block;
+}
+.stamp-image {
+  position: absolute;
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%) rotate(-15deg);
+  border: 5px double;
+  padding: 5px 20px;
+  border-radius: 5px;
+  font-size: 24pt;
+  font-weight: 700;
+  opacity: 0.15;
+}
+.stamp-paid {
+  color: #28a745;
+  border-color: #28a745;
+}
+.stamp-settled {
+  color: #4a55a2;
+  border-color: #4a55a2;
+}
+.na-message {
+  text-align: center;
+  font-style: italic;
+  font-weight: 500;
+  color: #888;
+  padding: 2rem 0;
+  border: 1px dashed #e0e0e0;
+  border-radius: 5px;
+  margin-top: 1rem;
 }
