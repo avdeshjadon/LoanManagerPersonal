@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>💰 Kumar pal singh | Customer & Loan Management</title>
+    <title>Kumar pal singh | Customer & Loan Management</title>
 
     <link
       rel="stylesheet"
@@ -731,21 +731,93 @@
           <div class="stamp-area">
             <div id="pdf-tpl-stamp" class="stamp-image hidden"></div>
             <div class="signature">
-              <div class="signature-image">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 150">
-                  <path
-                    d="M10,95 C20,70 40,60 70,80 S100,110 120,100 S150,80 180,90 S210,110 230,100 S260,80 290,90 L350,60 C365,50 380,55 390,70"
-                    stroke-width="3"
-                    fill="none"
-                  />
-                  <path
-                    d="M150,95 C160,85 180,85 190,95"
-                    stroke-width="2.5"
-                    fill="none"
-                  />
-                </svg>
+              <div class="signature-image" style="width: 240px; height: 85px">
+                <img
+                  src="my_signature.png"
+                  alt="Authorised Signature"
+                  style="width: 100%; height: 100%; object-fit: contain"
+                />
               </div>
               <p class="signature-title">Authorised Signatory</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="legal-notice-container">
+          <div class="notice-letterhead">
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Seal_of_the_Reserve_Bank_of_India.svg/800px-Seal_of_the_Reserve_Bank_of_India.svg.png"
+              class="letterhead-logo left"
+            />
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Emblem_of_India_%28without_motto%29.svg/640px-Emblem_of_India_%28without_motto%29.svg.png"
+              class="letterhead-logo middle"
+            />
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Government_of_India_logo.svg/1600px-Government_of_India_logo.svg.png"
+              class="letterhead-logo right"
+            />
+          </div>
+          <div class="notice-meta">
+            <p>
+              <strong>DOCUMENT ID:</strong>
+              <span id="pdf-tpl-reference-id"></span>
+            </p>
+            <p>
+              <strong>DATE OF ISSUE:</strong>
+              <span id="pdf-tpl-issue-date"></span>
+            </p>
+          </div>
+
+          <h3>चेतावनी नोटिस / WARNING NOTICE</h3>
+
+          <p>
+            यह नोटिस भारतीय संविधान के तहत स्थापित कानूनों के अनुसार जारी किया
+            गया है। आपको सूचित किया जाता है कि आपके द्वारा लिए गए ऋण की बकाया
+            राशि का भुगतान आवश्यक है।
+            <br /><br />
+            भुगतान करने में किसी भी प्रकार की विफलता या जानबूझकर की गई देरी को
+            एक गंभीर दीवानी (civil) एवं आपराधिक (criminal) अपराध माना जाएगा। यदि
+            भुगतान के लिए दिया गया कोई भी चेक अनादरित (bounced) होता है, या यह
+            पाया जाता है कि ऋण लेते समय आपकी मंशा धोखाधड़ी की थी, तो ऋणदाता
+            भारतीय दंड संहिता (Indian Penal Code), 1860 और परक्राम्य लिखत
+            अधिनियम (Negotiable Instruments Act), 1881 के तहत निम्नलिखित कठोरतम
+            कानूनी कार्यवाही करने के लिए बाध्य होगा:
+            <br /><br />
+            1. <strong>आपराधिक मुकदमा (Criminal Proceedings):</strong>
+            <strong>धारा 420 (धोखाधड़ी)</strong> और
+            <strong>धारा 406 (आपराधिक विश्वासघात)</strong> के तहत FIR दर्ज कराई
+            जा सकती है, जिसके परिणामस्वरूप **गैर-जमानती वारंट (Non-Bailable
+            Warrant)** जारी हो सकता है और दोषसिद्धि पर **7 साल तक की कैद** और
+            भारी जुर्माना हो सकता है। <br /><br />
+            2.
+            <strong>चेक बाउंस कार्यवाही (Cheque Bounce Proceedings):</strong>
+            परक्राम्य लिखत अधिनियम की <strong>धारा 138</strong> के तहत, आपको 2
+            साल तक की कैद या चेक की राशि का दोगुना जुर्माना, या दोनों की सज़ा हो
+            सकती है। <br /><br />
+          </p>
+
+          <div class="notice-footer">
+            <div class="qr-code-area">
+              <img id="pdf-tpl-qr-code" src="" alt="QR Code" />
+              <span>Scan to Verify Authenticity</span>
+            </div>
+            <div class="signature-area">
+              <img
+                src="gov_signature.png"
+                alt="Government Authorised Signature"
+                style="
+                  width: 200px;
+                  height: 100px;
+                  margin-bottom: -50px;
+                  margin-top: 10px;
+                "
+              />
+              <p class="signature-line"></p>
+              <p class="signature-title">(Authorised Signatory)</p>
+              <p class="signature-title">
+                <strong>For: Kumar pal singh</strong>
+              </p>
             </div>
           </div>
         </div>

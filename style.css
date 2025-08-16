@@ -15,10 +15,9 @@
     0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --box-shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1),
     0 4px 6px -2px rgba(0, 0, 0, 0.05);
-
-  /* FIXED: Replaced color-mix with rgba variables */
   --primary-t-10: rgba(74, 85, 162, 0.1);
   --primary-t-08: rgba(74, 85, 162, 0.08);
+  --primary-t-20: rgba(74, 85, 162, 0.2);
   --success-t-15: rgba(56, 161, 105, 0.15);
   --error-t-10: rgba(229, 62, 62, 0.1);
   --monthly-payer-bg: var(--success-t-15);
@@ -32,10 +31,9 @@ html[data-theme="dark"] {
   --bg-main: #1a202c;
   --bg-card: #2d3748;
   --border-color: #4a5568;
-
-  /* FIXED: Replaced color-mix with rgba variables for dark mode */
   --primary-t-10: rgba(144, 205, 244, 0.1);
   --primary-t-08: rgba(144, 205, 244, 0.08);
+  --primary-t-20: rgba(144, 205, 244, 0.2);
   --success-t-20: rgba(56, 161, 105, 0.2);
   --error-t-10: rgba(229, 62, 62, 0.1);
   --monthly-payer-bg: var(--success-t-20);
@@ -239,7 +237,7 @@ body {
 .menu-item:hover,
 .menu-item.active {
   color: var(--primary);
-  background: var(--primary-t-08); /* FIXED */
+  background: var(--primary-t-08);
 }
 .menu-item.active {
   font-weight: 600;
@@ -303,11 +301,11 @@ body {
 .theme-toggle-btn:hover,
 .logout-btn:hover {
   color: var(--primary);
-  background-color: var(--primary-t-10); /* FIXED */
+  background-color: var(--primary-t-10);
 }
 .logout-btn:hover {
   color: var(--error);
-  background-color: var(--error-t-10); /* FIXED */
+  background-color: var(--error-t-10);
 }
 .stats-container {
   display: grid;
@@ -654,7 +652,7 @@ body {
   display: block;
   font-size: 0.8em;
   font-weight: 500;
-  min-height: 1.2em; /* Ensures alignment even if empty */
+  min-height: 1.2em;
 }
 .tx-interest.success {
   color: var(--success);
@@ -716,7 +714,7 @@ body {
   padding: 1rem;
   border: 1px solid var(--error);
   border-radius: var(--border-radius);
-  background-color: var(--error-t-10); /* FIXED */
+  background-color: var(--error-t-10);
   text-align: center;
 }
 #payment-difference-summary p {
@@ -849,7 +847,6 @@ input:checked + .slider:before {
 #transaction-form .form-row {
   margin-bottom: 0;
 }
-
 @media (max-width: 992px) {
   .sidebar {
     transform: translateX(-100%);
@@ -970,8 +967,6 @@ input:checked + .slider:before {
     opacity: 1;
   }
 }
-
-/* === PDF INVOICE STYLES (FINAL & STYLISH) === */
 #invoice {
   width: 210mm;
   padding: 20mm;
@@ -982,25 +977,13 @@ input:checked + .slider:before {
   background-color: #fff;
   position: relative;
   overflow: hidden;
-}
-#invoice::before {
-  content: "Kumar pal singh";
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%) rotate(-45deg);
-  font-size: 90pt;
-  font-weight: 700;
-  color: rgba(74, 85, 162, 0.05);
-  z-index: 1;
-  pointer-events: none;
-  width: 200%;
-  text-align: center;
+  min-height: 257mm;
 }
 .invoice-header,
 .invoice-body,
 .invoice-summary,
-.invoice-footer {
+.invoice-footer,
+.legal-notice-container {
   position: relative;
   z-index: 2;
 }
@@ -1088,7 +1071,6 @@ input:checked + .slider:before {
 }
 .invoice-summary .summary-label {
   font-weight: 500;
-  color: #fff;
 }
 .invoice-summary .summary-total {
   border-top: 2px solid var(--primary);
@@ -1135,13 +1117,6 @@ input:checked + .slider:before {
   height: 100%;
   stroke: #2c3e50;
 }
-.signature-title {
-  font-size: 9pt;
-  color: #333;
-  border-top: 1px solid #333;
-  padding: 5px 15px 0 15px;
-  display: inline-block;
-}
 .stamp-image {
   position: absolute;
   top: -20px;
@@ -1171,4 +1146,84 @@ input:checked + .slider:before {
   border: 1px dashed #e0e0e0;
   border-radius: 5px;
   margin-top: 1rem;
+}
+.legal-notice-container {
+  page-break-before: always;
+  padding: 20mm;
+  background-color: #fdfdfd;
+  position: relative;
+  overflow: hidden;
+  page-break-inside: avoid;
+}
+.notice-letterhead {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #800000;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+}
+.letterhead-logo {
+  height: 50px;
+  width: auto;
+}
+.letterhead-logo.middle {
+  height: 60px;
+}
+.letterhead-logo.right {
+  height: 35px;
+}
+.notice-meta {
+  font-family: "Courier New", Courier, monospace;
+  font-size: 9pt;
+  color: #333;
+  margin-bottom: 20px;
+}
+.legal-notice-container h3 {
+  font-size: 16pt;
+  font-weight: 700;
+  color: #800000;
+  margin: 0 0 20px 0;
+  text-align: center;
+  text-decoration: underline;
+}
+.legal-notice-container p {
+  font-size: 10.5pt;
+  text-align: justify;
+  line-height: 1.8;
+  color: #000;
+  margin-bottom: 25px;
+}
+.notice-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  margin-top: 40px;
+}
+.qr-code-area {
+  text-align: center;
+}
+.qr-code-area img {
+  width: 90px;
+  height: 90px;
+}
+.qr-code-area span {
+  font-size: 8pt;
+  color: #555;
+  display: block;
+}
+.signature-area {
+  text-align: center;
+  width: 250px;
+}
+.signature-line {
+  border-top: 1px solid #333;
+  margin-bottom: 5px;
+  margin-top: 50px;
+}
+.signature-title {
+  margin: 0;
+  padding: 0;
+  font-size: 10pt;
+  text-align: center;
 }

@@ -1,4 +1,3 @@
-// Firebase configuration and initialization
 const firebaseConfig = {
   apiKey: "AIzaSyApRobyjr1U9chPvmXD_bG8WQRLneVDzFo",
   authDomain: "bahi-19838.firebaseapp.com",
@@ -12,13 +11,10 @@ const db = firebase.firestore();
 const auth = firebase.auth();
 const storage = firebase.storage();
 
-// Main script execution
 document.addEventListener("DOMContentLoaded", () => {
-  // State variables
   let allCustomers = { active: [], settled: [] };
   let currentUser = null;
 
-  // DOM element references
   const authContainer = document.getElementById("auth-container");
   const adminDashboard = document.getElementById("admin-dashboard");
   const logoutBtns = [
@@ -37,8 +33,12 @@ document.addEventListener("DOMContentLoaded", () => {
   const mobileMenuBtn = document.getElementById("mobile-menu-btn");
   const sidebarOverlay = document.getElementById("sidebar-overlay");
   const loginForm = document.getElementById("login-form");
+  const detailsModal = document.getElementById("customer-details-modal");
+  const customerFormModal = document.getElementById("customer-form-modal");
+  const customerFormEl = document.getElementById("customer-form");
+  const confirmationModal = document.getElementById("confirmation-modal");
+  const interestForm = document.getElementById("interest-form");
 
-  // --- Helper Functions ---
   const showToast = (type, title, message) => {
     const toastContainer = document.getElementById("toast-container");
     const toast = document.createElement("div");
@@ -66,7 +66,7 @@ document.addEventListener("DOMContentLoaded", () => {
     if (!btnText) return;
     if (!btnText.dataset.originalText)
       btnText.dataset.originalText = btnText.textContent;
-    const originalText = text ? btnText.dataset.originalText : "Loading...";
+    const originalText = btnText.dataset.originalText;
 
     btn.disabled = isLoading;
     if (spinner) spinner.classList.toggle("hidden", !isLoading);
@@ -86,7 +86,6 @@ document.addEventListener("DOMContentLoaded", () => {
     return null;
   };
 
-  // --- Core Application Logic ---
   loginForm.addEventListener("submit", async (e) => {
     e.preventDefault();
     const email = document.getElementById("login-email").value;
@@ -104,7 +103,7 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Login Error:", error);
       loginError.textContent = error.message;
       showToast("error", "Login Failed", error.message);
-      toggleButtonLoading(loginBtn, false, "Login");
+      toggleButtonLoading(loginBtn, false);
     }
   });
 
@@ -412,7 +411,6 @@ document.addEventListener("DOMContentLoaded", () => {
     adjustStatCardFontSize(netProfitEl);
   };
 
-  const detailsModal = document.getElementById("customer-details-modal");
   const showCustomerDetails = (customerId, isReadOnly = false) => {
     const customer = [...allCustomers.active, ...allCustomers.settled].find(
       (c) => c.id === customerId
@@ -592,8 +590,6 @@ document.addEventListener("DOMContentLoaded", () => {
     list.addEventListener("click", handleListClick)
   );
 
-  const customerFormModal = document.getElementById("customer-form-modal");
-  const customerFormEl = document.getElementById("customer-form");
   document.getElementById("add-customer-btn").addEventListener("click", () => {
     customerFormEl.reset();
     document.getElementById("customer-id").value = "";
@@ -701,11 +697,10 @@ document.addEventListener("DOMContentLoaded", () => {
       document.getElementById("customer-form-error").textContent =
         error.message;
     } finally {
-      toggleButtonLoading(saveBtn, false, "Save Customer");
+      toggleButtonLoading(saveBtn, false);
     }
   });
 
-  const confirmationModal = document.getElementById("confirmation-modal");
   const showConfirmation = (title, message, onConfirm) => {
     confirmationModal.querySelector("#confirmation-title").textContent = title;
     confirmationModal.querySelector("#confirmation-message").textContent =
@@ -735,46 +730,6 @@ document.addEventListener("DOMContentLoaded", () => {
   };
 
   detailsModal.addEventListener("click", (e) => {
-    const deleteBtn = e.target.closest(".delete-tx-btn");
-    if (deleteBtn) {
-      const txId = parseInt(deleteBtn.dataset.txId);
-      const customerId = document.getElementById(
-        "transaction-customer-id"
-      ).value;
-      const customer = allCustomers.active.find((c) => c.id === customerId);
-      if (!customer) return;
-
-      const txToDelete = customer.transactions.find((tx) => tx.id === txId);
-      if (!txToDelete) return;
-
-      showConfirmation(
-        `Delete ${txToDelete.type}?`,
-        `Are you sure you want to delete this transaction of ${formatCurrency(
-          txToDelete.amount
-        )}? This cannot be undone.`,
-        async () => {
-          try {
-            await db
-              .collection("customers")
-              .doc(customerId)
-              .update({
-                transactions:
-                  firebase.firestore.FieldValue.arrayRemove(txToDelete),
-              });
-            await loadData();
-            showCustomerDetails(customerId);
-            showToast(
-              "success",
-              "Transaction Deleted",
-              "The transaction has been removed."
-            );
-          } catch (error) {
-            showToast("error", "Error", error.message);
-          }
-        }
-      );
-    }
-
     const whatsappBtn = e.target.closest("#whatsapp-btn");
     if (whatsappBtn) {
       const customerId = document.getElementById(
@@ -812,10 +767,10 @@ document.addEventListener("DOMContentLoaded", () => {
         .replace(/\//g, "-");
       const options = {
         margin: 0,
-        filename: `${customer.name}_${dateStr}.pdf`,
+        filename: `${customer.name}_Ledger_${dateStr}.pdf`,
         image: { type: "jpeg", quality: 1.0 },
         html2canvas: {
-          scale: 2,
+          scale: 4,
           dpi: 300,
           useCORS: true,
           letterRendering: true,
@@ -826,16 +781,43 @@ document.addEventListener("DOMContentLoaded", () => {
       html2pdf()
         .from(elementToPrint)
         .set(options)
+        .toPdf()
+        .get("pdf")
+        .then(function (pdf) {
+          const totalPages = pdf.internal.getNumberOfPages();
+          const rbiLogoUrl = 'rbi_watermark.png';
+
+          for (let i = 1; i <= totalPages; i++) {
+            pdf.setPage(i);
+            pdf.setGState(new pdf.GState({ opacity: 0.05 }));
+
+            const pageHeight = pdf.internal.pageSize.getHeight();
+            const pageWidth = pdf.internal.pageSize.getWidth();
+            const logoSizeInMM = 132;
+
+            pdf.addImage(
+              rbiLogoUrl,
+              "PNG",
+              (pageWidth - logoSizeInMM) / 2,
+              (pageHeight - logoSizeInMM) / 2,
+              logoSizeInMM,
+              logoSizeInMM
+            );
+
+            pdf.setGState(new pdf.GState({ opacity: 1 }));
+          }
+        })
         .save()
-        .then(() => {
+        .then(function () {
           toggleButtonLoading(whatsappBtn, false, "Send on WhatsApp");
           showToast(
             "success",
-            "PDF Downloading",
-            "WhatsApp will open. Please attach the downloaded file."
+            "PDF Generated",
+            "Your PDF has been downloaded."
           );
+
           const text = encodeURIComponent(
-            `Hello ${customer.name}, find your attached details here.`
+            `Hello ${customer.name}, find your attached ledger statement here.`
           );
           const whatsappUrl = `https://wa.me/${formattedPhone}?text=${text}`;
           window.open(whatsappUrl, "_blank");
@@ -843,30 +825,21 @@ document.addEventListener("DOMContentLoaded", () => {
         .catch((err) => {
           showToast("error", "PDF Error", "Could not generate the PDF file.");
           console.error(err);
-          toggleButtonLoading(whatsappBtn, false, "Send on WhatsApp");
+          toggleButtonLoading(whatsappBtn, false);
         });
     }
   });
 
-  const populatePdfTemplate = (customer) => {
+const populatePdfTemplate = (customer) => {
     const { loans, payments, lenderTotal, borrowerTotal, netBalanceDue } =
       calculateLedgers(customer);
 
-    document.getElementById("pdf-tpl-customer-name").textContent =
-      customer.name;
+    document.getElementById("pdf-tpl-customer-name").textContent = customer.name;
     document.getElementById("pdf-tpl-generation-date").textContent =
       new Date().toLocaleDateString("en-IN");
-
+      
     const now = new Date();
-    const timestamp = `Generated: ${now.toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    })} at ${now.toLocaleTimeString("en-IN", {
-      hour: "2-digit",
-      minute: "2-digit",
-      hour12: true,
-    })}`;
+    const timestamp = `Generated: ${now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", })} at ${now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, })}`;
     document.getElementById("pdf-tpl-timestamp").textContent = timestamp;
 
     const formatMonthlyRate = (tx) => {
@@ -904,14 +877,11 @@ document.addEventListener("DOMContentLoaded", () => {
     );
 
     if (payments.length === 0) {
-      // No payments exist, so hide the table and show the "N/A" message
       borrowerTable.classList.add("hidden");
       noBorrowerPaymentsMsg.classList.remove("hidden");
     } else {
-      // Payments exist, so show the table and populate it
       borrowerTable.classList.remove("hidden");
       noBorrowerPaymentsMsg.classList.add("hidden");
-
       const borrowerTbody = borrowerTable.querySelector("tbody");
       borrowerTbody.innerHTML = "";
       payments
@@ -951,48 +921,39 @@ document.addEventListener("DOMContentLoaded", () => {
 
       summaryContainer.innerHTML = `
             <table>
-                <tr>
-                    <td class="summary-label">Total Amount Given:</td>
-                    <td class="text-right">${formatCurrency(totalGiven)}</td>
-                </tr>
-                <tr>
-                    <td class="summary-label">Total Amount Received:</td>
-                    <td class="text-right">${formatCurrency(totalReceived)}</td>
-                </tr>
-                <tr class="summary-total">
-                    <td class="summary-label">${profitLossLabel}:</td>
-                    <td class="text-right">${formatCurrency(netProfit)}</td>
-                </tr>
-            </table>
-        `;
+                <tr><td class="summary-label">Total Amount Given:</td><td class="text-right">${formatCurrency(totalGiven)}</td></tr>
+                <tr><td class="summary-label">Total Amount Received:</td><td class="text-right">${formatCurrency(totalReceived)}</td></tr>
+                <tr class="summary-total"><td class="summary-label">${profitLossLabel}:</td><td class="text-right">${formatCurrency(netProfit)}</td></tr>
+            </table>`;
       stamp.textContent = "SETTLED";
       stamp.classList.remove("hidden", "stamp-paid");
       stamp.classList.add("stamp-settled");
     } else {
       summaryContainer.innerHTML = `
             <table>
-                <tr>
-                    <td class="summary-label">Total Given (with Interest):</td>
-                    <td class="text-right">${formatCurrency(lenderTotal)}</td>
-                </tr>
-                <tr>
-                    <td class="summary-label">Total Received (with Interest):</td>
-                    <td class="text-right">${formatCurrency(borrowerTotal)}</td>
-                </tr>
-                <tr class="summary-total">
-                    <td class="summary-label">Final Net Amount Due:</td>
-                    <td class="text-right">${formatCurrency(netBalanceDue)}</td>
-                </tr>
-            </table>
-        `;
+                <tr><td class="summary-label">Total Given (with Interest):</td><td class="text-right">${formatCurrency(lenderTotal)}</td></tr>
+                <tr><td class="summary-label">Total Received (with Interest):</td><td class="text-right">${formatCurrency(borrowerTotal)}</td></tr>
+                <tr class="summary-total"><td class="summary-label">Final Net Amount Due:</td><td class="text-right">${formatCurrency(netBalanceDue)}</td></tr>
+            </table>`;
       if (netBalanceDue <= 0) {
         stamp.textContent = "PAID";
         stamp.classList.remove("hidden", "stamp-settled");
         stamp.classList.add("stamp-paid");
       }
     }
-  };
 
+    const issueDate = new Date();
+    const referenceId = `KPS/LEGAL/${customer.name.substring(0, 3).toUpperCase()}/${issueDate.getFullYear()}${String(issueDate.getMonth() + 1).padStart(2, '0')}`;
+    
+    document.getElementById("pdf-tpl-reference-id").textContent = referenceId;
+    document.getElementById("pdf-tpl-issue-date").textContent = issueDate.toLocaleDateString("en-IN");
+
+    const legalInfoUrl = "https://www.indiacode.nic.in/show-data?actid=AC_CEN_3_20_00035_188126_1517807326001&sectionId=33615&sectionno=138&orderno=150";
+    
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(legalInfoUrl)}`;
+    
+    document.getElementById("pdf-tpl-qr-code").src = qrCodeUrl;
+};
   document
     .getElementById("transaction-form")
     .addEventListener("submit", async (e) => {
@@ -1058,7 +1019,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (error) {
         showToast("error", "Update Failed", error.message);
       } finally {
-        toggleButtonLoading(btn, false, "Record Transaction");
+        toggleButtonLoading(btn, false);
       }
     });
 
@@ -1139,7 +1100,6 @@ document.addEventListener("DOMContentLoaded", () => {
     btn.addEventListener("click", () => auth.signOut())
   );
 
-  const interestForm = document.getElementById("interest-form");
   interestForm.addEventListener("submit", (e) => {
     e.preventDefault();
     const p = parseFloat(document.getElementById("calc-principal").value);
@@ -1213,7 +1173,7 @@ document.addEventListener("DOMContentLoaded", () => {
       } catch (error) {
         showToast("error", "Error", error.message);
       } finally {
-        toggleButtonLoading(btn, false, "Change Password");
+        toggleButtonLoading(btn, false);
       }
     });
 
