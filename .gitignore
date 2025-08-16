@@ -1,4 +1,4 @@
 .env
-makeadmin/node_modules
-makeadmin/serviceAccountKey.json
+setAdmin/node_modules
+setAdmin/serviceAccountKey.json
 
