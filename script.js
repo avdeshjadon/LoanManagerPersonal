@@ -947,7 +947,7 @@ const populatePdfTemplate = (customer) => {
     document.getElementById("pdf-tpl-reference-id").textContent = referenceId;
     document.getElementById("pdf-tpl-issue-date").textContent = issueDate.toLocaleDateString("en-IN");
 
-    const legalInfoUrl = "https://www.indiacode.nic.in/show-data?actid=AC_CEN_3_20_00035_188126_1517807326001&sectionId=33615&sectionno=138&orderno=150";
+    const legalInfoUrl = "https://www.mha.gov.in/en/acts";
     
     const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(legalInfoUrl)}`;
     
