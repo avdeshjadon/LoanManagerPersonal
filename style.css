@@ -1229,3 +1229,12 @@ input:checked + .slider:before {
   font-size: 10pt;
   text-align: center;
 }
+.pdf-approval-notice {
+  margin-bottom: 30px;
+  font-size: 8pt;
+  color: #333;
+}
+.pdf-summary-footer-group {
+  page-break-inside: avoid !important;
+  margin-top: 30px;
+}

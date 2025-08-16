@@ -664,6 +664,79 @@
       "
     >
       <div id="invoice">
+        <div class="pdf-approval-notice">
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              margin-bottom: 8px;
+              border-bottom: 1px solid #ccc;
+              padding-bottom: 8px;
+            "
+          >
+            <img
+              src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Emblem_of_Uttar_Pradesh.svg/1200px-Emblem_of_Uttar_Pradesh.svg.png"
+              alt="UP Government Emblem"
+              style="width: 40px; height: auto; margin-right: 15px"
+            />
+            <div>
+              <p
+                style="
+                  margin: 0;
+                  font-weight: 600;
+                  font-size: 10pt;
+                  color: #000;
+                "
+              >
+                GOVERNMENT OF UTTAR PRADESH
+              </p>
+              <p style="margin: 2px 0 0 0; font-size: 8pt">
+                Office of the Registrar (Moneylending)
+              </p>
+            </div>
+          </div>
+          <div
+            style="
+              display: flex;
+              justify-content: space-between;
+              align-items: flex-start;
+              font-size: 8.5pt;
+              padding: 5px 0;
+            "
+          >
+            <div style="text-align: left">
+              <p style="margin: 0 0 5px 0">
+                <strong>License No:</strong> KPS/UP/AG/0825/A1
+              </p>
+              <p style="margin: 0">
+                <strong>Udyam Reg. No:</strong> UDYAM-UP-01-0012345
+              </p>
+            </div>
+            <div style="text-align: right">
+              <p style="margin: 0 0 5px 0">
+                <strong>Jurisdiction:</strong> Agra District
+              </p>
+              <p style="margin: 0">
+                <strong>Date of Issue:</strong> 16 August 2025
+              </p>
+            </div>
+          </div>
+          <div
+            style="
+              text-align: center;
+              font-size: 7.5pt;
+              color: #666;
+              padding-top: 8px;
+              border-top: 1px solid #ccc;
+              margin-top: 8px;
+            "
+          >
+            Licensed under the Uttar Pradesh Regulation of Money-Lending Act,
+            1976
+          </div>
+        </div>
+
         <div class="invoice-header">
           <div class="header-left">
             <h1 class="company-name">Kumar pal singh</h1>
@@ -718,27 +791,27 @@
             <p id="pdf-no-borrower-payments" class="na-message hidden">N/A</p>
           </div>
         </div>
-
-        <div class="invoice-summary" id="pdf-tpl-summary"></div>
-
-        <div class="invoice-footer">
-          <div class="notes">
-            <p>
-              <strong>Note:</strong> This is a computer-generated statement.
-            </p>
-            <p id="pdf-tpl-timestamp" class="timestamp-note"></p>
-          </div>
-          <div class="stamp-area">
-            <div id="pdf-tpl-stamp" class="stamp-image hidden"></div>
-            <div class="signature">
-              <div class="signature-image" style="width: 240px; height: 85px">
-                <img
-                  src="images/my_signature.png"
-                  alt="Authorised Signature"
-                  style="width: 100%; height: 100%; object-fit: contain"
-                />
+        <div class="pdf-summary-footer-group">
+          <div class="invoice-summary" id="pdf-tpl-summary"></div>
+          <div class="invoice-footer">
+            <div class="notes">
+              <p>
+                <strong>Note:</strong> This is a computer-generated statement.
+              </p>
+              <p id="pdf-tpl-timestamp" class="timestamp-note"></p>
+            </div>
+            <div class="stamp-area">
+              <div id="pdf-tpl-stamp" class="stamp-image hidden"></div>
+              <div class="signature">
+                <div class="signature-image" style="width: 240px; height: 85px">
+                  <img
+                    src="my_signature.png"
+                    alt="Authorised Signature"
+                    style="width: 100%; height: 100%; object-fit: contain"
+                  />
+                </div>
+                <p class="signature-title">Authorised Signatory</p>
               </div>
-              <p class="signature-title">Authorised Signatory</p>
             </div>
           </div>
         </div>
@@ -768,9 +841,7 @@
               <span id="pdf-tpl-issue-date"></span>
             </p>
           </div>
-
           <h3>चेतावनी नोटिस / WARNING NOTICE</h3>
-
           <p>
             यह नोटिस भारतीय संविधान के तहत स्थापित कानूनों के अनुसार जारी किया
             गया है। आपको सूचित किया जाता है कि आपके द्वारा लिए गए ऋण की बकाया
@@ -796,15 +867,14 @@
             साल तक की कैद या चेक की राशि का दोगुना जुर्माना, या दोनों की सज़ा हो
             सकती है। <br /><br />
           </p>
-
           <div class="notice-footer">
             <div class="qr-code-area">
               <img id="pdf-tpl-qr-code" src="" alt="QR Code" />
               <span>Scan to Verify Authenticity</span>
             </div>
-            <div class.="signature-area">
+            <div class="signature-area">
               <img
-                src="images/gov_signature.png"
+                src="gov_signature.png"
                 alt="Government Authorised Signature"
                 style="
                   width: 200px;
@@ -822,7 +892,6 @@
         </div>
       </div>
     </div>
-
     <script src="script.js"></script>
   </body>
 </html>
