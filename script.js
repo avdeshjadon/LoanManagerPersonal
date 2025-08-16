@@ -731,6 +731,8 @@ document.addEventListener("DOMContentLoaded", () => {
 
   detailsModal.addEventListener("click", (e) => {
     const whatsappBtn = e.target.closest("#whatsapp-btn");
+    const deleteTxBtn = e.target.closest(".delete-tx-btn");
+
     if (whatsappBtn) {
       const customerId = document.getElementById(
         "transaction-customer-id"
@@ -785,7 +787,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .get("pdf")
         .then(function (pdf) {
           const totalPages = pdf.internal.getNumberOfPages();
-          const rbiLogoUrl = 'images/rbi_watermark.png';
+          const rbiLogoUrl = "images/rbi_watermark.png";
           for (let i = 1; i <= totalPages; i++) {
             pdf.setPage(i);
             pdf.setGState(new pdf.GState({ opacity: 0.05 }));
@@ -827,18 +829,72 @@ document.addEventListener("DOMContentLoaded", () => {
           toggleButtonLoading(whatsappBtn, false);
         });
     }
+    if (deleteTxBtn) {
+      const transactionId = Number(deleteTxBtn.dataset.txId);
+      const customerId = document.getElementById(
+        "transaction-customer-id"
+      ).value;
+
+      if (!transactionId || !customerId) {
+        showToast(
+          "error",
+          "Error",
+          "Could not identify transaction or customer."
+        );
+        return;
+      }
+
+      showConfirmation(
+        "Delete Transaction?",
+        "Are you sure you want to permanently delete this transaction record? This action cannot be undone.",
+        async () => {
+          try {
+            const customerRef = db.collection("customers").doc(customerId);
+            const doc = await customerRef.get();
+            if (!doc.exists) throw new Error("Customer not found.");
+
+            const customerData = doc.data();
+            const updatedTransactions = customerData.transactions.filter(
+              (tx) => tx.id !== transactionId
+            );
+
+            await customerRef.update({ transactions: updatedTransactions });
+
+            showToast(
+              "success",
+              "Deleted",
+              "The transaction has been removed."
+            );
+            await loadData();
+            showCustomerDetails(customerId);
+          } catch (error) {
+            showToast("error", "Delete Failed", error.message);
+            console.error("Error deleting transaction:", error);
+          }
+        }
+      );
+    }
   });
 
-const populatePdfTemplate = (customer) => {
+  const populatePdfTemplate = (customer) => {
     const { loans, payments, lenderTotal, borrowerTotal, netBalanceDue } =
       calculateLedgers(customer);
 
-    document.getElementById("pdf-tpl-customer-name").textContent = customer.name;
+    document.getElementById("pdf-tpl-customer-name").textContent =
+      customer.name;
     document.getElementById("pdf-tpl-generation-date").textContent =
       new Date().toLocaleDateString("en-IN");
-      
+
     const now = new Date();
-    const timestamp = `Generated: ${now.toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric", })} at ${now.toLocaleTimeString("en-IN", { hour: "2-digit", minute: "2-digit", hour12: true, })}`;
+    const timestamp = `Generated: ${now.toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+    })} at ${now.toLocaleTimeString("en-IN", {
+      hour: "2-digit",
+      minute: "2-digit",
+      hour12: true,
+    })}`;
     document.getElementById("pdf-tpl-timestamp").textContent = timestamp;
 
     const formatMonthlyRate = (tx) => {
@@ -920,9 +976,15 @@ const populatePdfTemplate = (customer) => {
 
       summaryContainer.innerHTML = `
             <table>
-                <tr><td class="summary-label">Total Amount Given:</td><td class="text-right">${formatCurrency(totalGiven)}</td></tr>
-                <tr><td class="summary-label">Total Amount Received:</td><td class="text-right">${formatCurrency(totalReceived)}</td></tr>
-                <tr class="summary-total"><td class="summary-label">${profitLossLabel}:</td><td class="text-right">${formatCurrency(netProfit)}</td></tr>
+                <tr><td class="summary-label">Total Amount Given:</td><td class="text-right">${formatCurrency(
+                  totalGiven
+                )}</td></tr>
+                <tr><td class="summary-label">Total Amount Received:</td><td class="text-right">${formatCurrency(
+                  totalReceived
+                )}</td></tr>
+                <tr class="summary-total"><td class="summary-label">${profitLossLabel}:</td><td class="text-right">${formatCurrency(
+        netProfit
+      )}</td></tr>
             </table>`;
       stamp.textContent = "SETTLED";
       stamp.classList.remove("hidden", "stamp-paid");
@@ -930,9 +992,15 @@ const populatePdfTemplate = (customer) => {
     } else {
       summaryContainer.innerHTML = `
             <table>
-                <tr><td class="summary-label">Total Given (with Interest):</td><td class="text-right">${formatCurrency(lenderTotal)}</td></tr>
-                <tr><td class="summary-label">Total Received (with Interest):</td><td class="text-right">${formatCurrency(borrowerTotal)}</td></tr>
-                <tr class="summary-total"><td class="summary-label">Final Net Amount Due:</td><td class="text-right">${formatCurrency(netBalanceDue)}</td></tr>
+                <tr><td class="summary-label">Total Given (with Interest):</td><td class="text-right">${formatCurrency(
+                  lenderTotal
+                )}</td></tr>
+                <tr><td class="summary-label">Total Received (with Interest):</td><td class="text-right">${formatCurrency(
+                  borrowerTotal
+                )}</td></tr>
+                <tr class="summary-total"><td class="summary-label">Final Net Amount Due:</td><td class="text-right">${formatCurrency(
+                  netBalanceDue
+                )}</td></tr>
             </table>`;
       if (netBalanceDue <= 0) {
         stamp.textContent = "PAID";
@@ -942,17 +1010,24 @@ const populatePdfTemplate = (customer) => {
     }
 
     const issueDate = new Date();
-    const referenceId = `KPS/LEGAL/${customer.name.substring(0, 3).toUpperCase()}/${issueDate.getFullYear()}${String(issueDate.getMonth() + 1).padStart(2, '0')}`;
-    
+    const referenceId = `KPS/LEGAL/${customer.name
+      .substring(0, 3)
+      .toUpperCase()}/${issueDate.getFullYear()}${String(
+      issueDate.getMonth() + 1
+    ).padStart(2, "0")}`;
+
     document.getElementById("pdf-tpl-reference-id").textContent = referenceId;
-    document.getElementById("pdf-tpl-issue-date").textContent = issueDate.toLocaleDateString("en-IN");
+    document.getElementById("pdf-tpl-issue-date").textContent =
+      issueDate.toLocaleDateString("en-IN");
 
     const legalInfoUrl = "https://www.mha.gov.in/en/acts";
-    
-    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(legalInfoUrl)}`;
-    
+
+    const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(
+      legalInfoUrl
+    )}`;
+
     document.getElementById("pdf-tpl-qr-code").src = qrCodeUrl;
-};
+  };
   document
     .getElementById("transaction-form")
     .addEventListener("submit", async (e) => {
