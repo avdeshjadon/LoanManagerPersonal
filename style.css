@@ -1149,11 +1149,13 @@ input:checked + .slider:before {
 }
 .legal-notice-container {
   page-break-before: always;
-  padding: 20mm;
   background-color: #fdfdfd;
   position: relative;
   overflow: hidden;
   page-break-inside: avoid;
+  box-sizing: border-box;
+  padding: 20mm;
+  margin: 0 -20mm;
 }
 .notice-letterhead {
   display: flex;

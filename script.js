@@ -785,8 +785,7 @@ document.addEventListener("DOMContentLoaded", () => {
         .get("pdf")
         .then(function (pdf) {
           const totalPages = pdf.internal.getNumberOfPages();
-          const rbiLogoUrl = 'rbi_watermark.png';
-
+          const rbiLogoUrl = 'images/rbi_watermark.png';
           for (let i = 1; i <= totalPages; i++) {
             pdf.setPage(i);
             pdf.setGState(new pdf.GState({ opacity: 0.05 }));
