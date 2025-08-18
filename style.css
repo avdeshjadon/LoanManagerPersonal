@@ -1,6 +1,7 @@
 :root {
   --primary: #4a55a2;
   --secondary: #3a4282;
+  --secondary-t-15: rgba(58, 66, 130, 0.15);
   --error: #e53e3e;
   --success: #38a169;
   --warning: #dd6b20;
@@ -525,12 +526,17 @@ body {
   background-color: var(--monthly-payer-bg);
   border-left: 4px solid var(--success);
 }
+.customer-item.is-annual-payer {
+  background-color: var(--secondary-t-15);
+  border-left: 4px solid var(--secondary);
+}
 .customer-item:hover {
   transform: translateY(-3px);
   box-shadow: var(--box-shadow);
   border-color: var(--primary);
 }
-.customer-item.is-monthly-payer:hover {
+.customer-item.is-monthly-payer:hover,
+.customer-item.is-annual-payer:hover {
   border-left-color: var(--primary);
 }
 .customer-info {
@@ -847,6 +853,54 @@ input:checked + .slider:before {
 #transaction-form .form-row {
   margin-bottom: 0;
 }
+.desktop-only-amounts {
+  display: flex;
+  gap: 1.25rem;
+  align-items: center;
+}
+.amount-item {
+  text-align: right;
+}
+.amount-item .label {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-gray);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+.amount-item .amount-given,
+.amount-item .amount-due,
+.mobile-only-amount {
+  font-weight: 600;
+  font-size: 1rem;
+}
+.amount-due {
+  color: var(--success);
+}
+.mobile-only-amount {
+  display: none;
+}
+#recent-customers-list {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 8px;
+}
+#recent-customers-list::-webkit-scrollbar {
+  width: 6px;
+}
+#recent-customers-list::-webkit-scrollbar-track {
+  background: var(--bg-main);
+  border-radius: 6px;
+}
+#recent-customers-list::-webkit-scrollbar-thumb {
+  background-color: var(--border-color);
+  border-radius: 6px;
+}
+.mobile-only-arrow {
+  display: none;
+  font-size: 1rem;
+  color: var(--text-gray);
+}
 @media (max-width: 992px) {
   .sidebar {
     transform: translateX(-100%);
@@ -894,6 +948,19 @@ input:checked + .slider:before {
   .tx-interest {
     display: inline;
     margin-left: 0.5rem;
+  }
+  .desktop-only-amounts {
+    display: none;
+  }
+  .mobile-only-amount {
+    display: inline-block;
+  }
+  .customer-item .customer-name,
+  .customer-item .customer-details {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    align-items: center;
   }
 }
 @media (max-width: 600px) {
@@ -947,6 +1014,9 @@ input:checked + .slider:before {
   }
   .customer-item .view-details-prompt {
     display: none;
+  }
+  .customer-item .mobile-only-arrow {
+    display: inline-block;
   }
   #transaction-form .form-row {
     grid-template-columns: 1fr;

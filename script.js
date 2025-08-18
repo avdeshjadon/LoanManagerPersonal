@@ -38,6 +38,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const customerFormEl = document.getElementById("customer-form");
   const confirmationModal = document.getElementById("confirmation-modal");
   const interestForm = document.getElementById("interest-form");
+  searchInput.addEventListener("input", (e) => {
+    const searchTerm = e.target.value.toLowerCase();
+    const filteredCustomers = allCustomers.active.filter((customer) =>
+      customer.name.toLowerCase().includes(searchTerm)
+    );
+    renderCustomerList(customersList, filteredCustomers, "active");
+  });
 
   const showToast = (type, title, message) => {
     const toastContainer = document.getElementById("toast-container");
@@ -198,32 +205,67 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       li.dataset.id = customer.id;
 
-      let extraInfoHtml = "";
-      if (listType === "settled") {
-        const profit = calculateNetProfit(customer);
-        const profitClass = profit >= 0 ? "success" : "error";
-        extraInfoHtml = `<span class="list-profit-display ${profitClass}">${formatCurrency(
-          profit
-        )}</span>`;
-      } else if (listType === "dashboard") {
-        const interest = calculateTotalInterest(customer);
-        extraInfoHtml = `<span class="list-interest-display success">+ ${formatCurrency(
-          interest
-        )}</span>`;
-      }
+      if (listType === "dashboard") {
+        const totalGiven = (customer.transactions || [])
+          .filter((t) => t.type === "loan")
+          .reduce((sum, t) => sum + t.amount, 0);
+        const { netBalanceDue } = calculateLedgers(customer);
 
-      li.innerHTML = `<div class="customer-info">
-                                <div class="customer-name">${
-                                  customer.name
-                                }</div>
-                                <div class="customer-details"><span>${
-                                  customer.phone || "No Phone"
-                                }</span></div>
-                              </div>
-                              <div class="customer-actions">
-                                ${extraInfoHtml}
-                                <span class="view-details-prompt" style="font-weight: 500;">View Details <i class="fas fa-arrow-right"></i></span>
-                              </div>`;
+        li.innerHTML = `
+            <div class="customer-info">
+                <div class="customer-name">
+                    ${customer.name}
+                    <span class="mobile-only-amount amount-given">${formatCurrency(
+                      totalGiven
+                    )}</span>
+                </div>
+                <div class="customer-details">
+                    <span>${customer.phone || "No Phone"}</span>
+                    <span class="mobile-only-amount amount-due">${formatCurrency(
+                      netBalanceDue
+                    )}</span>
+                </div>
+            </div>
+            <div class="customer-actions">
+                <div class="desktop-only-amounts">
+                    <div class="amount-item">
+                        <span class="label">Given</span>
+                        <span class="amount-given">${formatCurrency(
+                          totalGiven
+                        )}</span>
+                    </div>
+                    <div class="amount-item">
+                        <span class="label">Due</span>
+                        <span class="amount-due">${formatCurrency(
+                          netBalanceDue
+                        )}</span>
+                    </div>
+                </div>
+                <span class="view-details-prompt">View Details <i class="fas fa-arrow-right"></i></span>
+            </div>`;
+      } else {
+        let extraInfoHtml = "";
+        if (listType === "settled") {
+          const profit = calculateNetProfit(customer);
+          const profitClass = profit >= 0 ? "success" : "error";
+          extraInfoHtml = `<span class="list-profit-display ${profitClass}">${formatCurrency(
+            profit
+          )}</span>`;
+        }
+
+        li.innerHTML = `
+    <div class="customer-info">
+        <div class="customer-name">${customer.name}</div>
+        <div class="customer-details"><span>${
+          customer.phone || "No Phone"
+        }</span></div>
+    </div>
+    <div class="customer-actions">
+        ${extraInfoHtml}
+        <span class="view-details-prompt">View Details <i class="fas fa-arrow-right"></i></span>
+        <span class="mobile-only-arrow"><i class="fas fa-chevron-right"></i></span>
+    </div>`;
+      }
       listElement.appendChild(li);
     });
   };
@@ -255,11 +297,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }));
 
       renderCustomerList(customersList, allCustomers.active, "active");
-      renderCustomerList(
-        recentCustomersList,
-        allCustomers.active.slice(0, 5),
-        "dashboard"
-      );
+      renderCustomerList(recentCustomersList, allCustomers.active, "dashboard");
       renderCustomerList(settledCustomersList, allCustomers.settled, "settled");
       updateDashboardStats();
     } catch (error) {
