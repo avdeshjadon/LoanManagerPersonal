@@ -2,7 +2,7 @@
 
 LoanManager is a comprehensive, client-side web application designed for small-scale lenders and businesses to efficiently manage customer loans, payments, and ledgers. Built with pure HTML, CSS, and JavaScript, and powered by a Firebase backend, it offers a secure, reliable, and easy-to-use interface for tracking financial transactions.
 
-**Live Demo:** [**https://avdeshjadon.github.io/LoanManager/**](https://avdeshjadon.github.io/LoanManager/)
+**Live Demo:** [**https://avdeshjadon.github.io/LoanManagerPersonal/**](https://avdeshjadon.github.io/LoanManagerPersonal/)
 
 ## ✨ Key Features
 
